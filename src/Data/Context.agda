@@ -1,6 +1,9 @@
 module Data.Context where
 
-open import Data.Fin using (Fin)
+open import Data.Fin using (Fin; suc; zero)
+open import Data.Fin.Substitution
+open import Data.Fin.Substitution.Lemmas
+open import Data.Fin.Substitution.Extra
 open import Data.Nat using (ℕ; suc; zero; _+_)
 open import Relation.Unary using (Pred)
 
@@ -17,6 +20,15 @@ module _ {ℓ} {T : Pred ℕ ℓ} where
   tail : ∀ {n : ℕ} → Ctx T (suc n) → Ctx T n
   tail (t ∷ ts) = ts
 
-  drop : ∀ {n : ℕ} m → Ctx T (m + n) → Ctx T n
+  drop : ∀ {n : ℕ} → (m : ℕ) → Ctx T (m + n) → Ctx T n
   drop zero Γ = Γ
   drop (suc m) (_ ∷ Γ) = drop m Γ
+
+module WeakenOps {ℓ} (T : Pred ℕ ℓ) (ext : Extension T) where
+  open Extension ext
+
+  lookup : ∀ {n : ℕ} → Ctx T n → Fin n → T n
+  -- Weaken [t] because [t] was in a context with [n-1] bound vars, now it's in
+  -- a context with [n] bound vars (the extra item is [t] itself).
+  lookup (t ∷ _) zero = weaken t
+  lookup (_ ∷ Γ) (suc n) = weaken (lookup Γ n)
